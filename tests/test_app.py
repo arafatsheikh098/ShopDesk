@@ -4,8 +4,6 @@ from __future__ import annotations
 import subprocess
 import sys
 
-import pytest
-
 from app.config import DEFAULT_SECRET_KEY
 
 
