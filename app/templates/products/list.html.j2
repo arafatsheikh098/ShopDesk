@@ -1,0 +1,28 @@
+{% extends "base.html.j2" %}
+{% block title %}Products — ShopDesk{% endblock %}
+{% block content %}
+<h1>Products</h1>
+<form method="get" action="/products" style="margin-bottom:1rem">
+  <input name="q" value="{{ q }}" placeholder="Search name, SKU or barcode">
+  <button class="btn">Search</button>
+</form>
+{% if user and user.role.value == 'owner' %}
+<p><a class="btn" href="/products/new">+ New product</a>
+   <a class="btn secondary" href="/products/import">Import CSV</a></p>
+{% endif %}
+<table>
+<tr><th>SKU</th><th>Name</th><th>Barcode</th><th>Stock</th>
+{% if user and user.role.value == 'owner' %}<th>Cost</th>{% endif %}
+<th>Sell</th></tr>
+{% for p in products %}
+<tr>
+  <td>{{ p.sku }}</td>
+  <td>{{ p.name }}</td>
+  <td>{{ p.barcode or '' }}</td>
+  <td>{{ p.stock }} {{ p.unit }}</td>
+  {% if user and user.role.value == 'owner' %}<td>{{ p.cost_price }}</td>{% endif %}
+  <td>{{ p.sell_price }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

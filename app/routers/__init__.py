@@ -27,3 +27,6 @@ def mount_routers(app: FastAPI) -> None:
 
 # Register built-in routers.
 register("app.routers.auth")
+register("app.routers.categories")
+register("app.routers.products")
+register("app.routers.stock")
