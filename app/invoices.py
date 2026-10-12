@@ -17,6 +17,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from sqlmodel import Session
 
 from app.config import get_settings
 from app.models import Sale, SaleLine
@@ -42,10 +43,24 @@ def _ensure_font() -> None:
     _FONT_REGISTERED = True
 
 
-def render_invoice_pdf(sale: Sale, lines: list[SaleLine], customer_name: str | None = None) -> bytes:
-    """Render a Sale + lines into a PDF byte string."""
+def render_invoice_pdf(
+    sale: Sale,
+    lines: list[SaleLine],
+    customer_name: str | None = None,
+    session: Session | None = None,
+) -> bytes:
+    """Render a Sale + lines into a PDF byte string.
+
+    If `session` is provided, shop-level settings (name, currency, footer)
+    are read from the settings table, otherwise env defaults are used.
+    """
     _ensure_font()
-    settings = get_settings()
+    if session is not None:
+        from app.settings_store import effective_settings
+
+        settings = effective_settings(session)
+    else:
+        settings = get_settings()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf, pagesize=A4, leftMargin=12 * mm, rightMargin=12 * mm,
