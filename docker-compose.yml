@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: shopdesk
+      POSTGRES_PASSWORD: shopdesk
+      POSTGRES_DB: shopdesk
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopdesk -d shopdesk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  app:
+    build: .
+    environment:
+      APP_ENV: development
+      SECRET_KEY: dev-secret-key-not-for-prod-1234567890
+      DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@db:5432/shopdesk
+      SHOP_TIMEZONE: Asia/Dhaka
+      CURRENCY_SYMBOL: "৳"
+      SHOP_NAME: Demo Grocery
+      SHOP_ADDRESS: 123 Market Street
+      SHOP_PHONE: "+880 1700 000000"
+      INVOICE_FOOTER: "Thank you for your purchase!"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:

@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shopdesk"
+version = "0.1.0"
+description = "Inventory, billing and daily sales reports for a small shop, with an offline-capable POS."
+requires-python = "==3.12.*"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.32.1",
+    "sqlmodel==0.0.22",
+    "alembic==1.14.0",
+    "psycopg[binary]==3.2.3",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.0",
+    "jinja2==3.1.5",
+    "python-multipart==0.0.20",
+    "argon2-cffi==23.1.0",
+    "reportlab==4.2.5",
+    "itsdangerous==2.2.0",
+    "httpx==0.28.1",
+    "freezegun==1.5.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-playwright==0.7.0",
+    "playwright==1.49.1",
+    "ruff==0.8.4",
+    "greenlet==3.1.1",
+]
+
+[tool.setuptools]
+packages = ["app", "app.models", "app.routers", "app.templates", "app.static", "scripts"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+ignore = ["S101", "S104", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "B"]
+"scripts/*" = ["S"]
+"alembic/*" = ["E", "F", "B"]
