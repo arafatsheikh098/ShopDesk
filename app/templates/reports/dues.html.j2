@@ -1,0 +1,9 @@
+{% extends "base.html.j2" %}
+{% block title %}Outstanding dues — ShopDesk{% endblock %}
+{% block content %}
+<h1>Outstanding dues</h1>
+<table>
+<tr><th>Customer</th><th>Phone</th><th>Due</th></tr>
+{% for r in rows %}<tr><td>{{ r.name }}</td><td>{{ r.phone }}</td><td>{{ r.due }}</td></tr>{% endfor %}
+</table>
+{% endblock %}
