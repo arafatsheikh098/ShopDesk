@@ -23,3 +23,7 @@ def mount_routers(app: FastAPI) -> None:
         mod = importlib.import_module(name)
         if hasattr(mod, "router"):
             app.include_router(mod.router)
+
+
+# Register built-in routers.
+register("app.routers.auth")
