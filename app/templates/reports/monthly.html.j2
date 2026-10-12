@@ -1,0 +1,9 @@
+{% extends "base.html.j2" %}
+{% block title %}Monthly report — ShopDesk{% endblock %}
+{% block content %}
+<h1>Monthly report — {{ year }}-{{ '%02d' % month }}</h1>
+<p>Sales: <b>{{ report.sales_count }}</b> |
+   Total: <b>{{ report.total }}</b> |
+   Discount: {{ report.discount }} |
+   <b>Profit: {{ report.profit }}</b></p>
+{% endblock %}

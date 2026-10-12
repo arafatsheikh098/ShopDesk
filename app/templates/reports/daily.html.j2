@@ -1,0 +1,23 @@
+{% extends "base.html.j2" %}
+{% block title %}Daily report — ShopDesk{% endblock %}
+{% block content %}
+<h1>Daily report — {{ day }}</h1>
+<p><a class="btn" href="/reports/monthly">Monthly</a> <a class="btn secondary" href="/reports/dues">Dues</a> <a class="btn secondary" href="/reports/export.csv">Export CSV</a></p>
+<p>Sales: <b>{{ report.sales_count }}</b> |
+   Subtotal: {{ report.subtotal }} |
+   Discount: {{ report.discount }} |
+   Total: <b>{{ report.total }}</b> |
+   Cost: {{ report.cost_total }} |
+   <b>Profit: {{ report.profit }}</b> |
+   Outstanding (today): {{ report.outstanding }}</p>
+<h2>By payment method</h2>
+<table>
+<tr><th>Method</th><th>Amount</th></tr>
+{% for k, v in report.by_method.items() %}<tr><td>{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}
+</table>
+<h2>Top products</h2>
+<table>
+<tr><th>Product</th><th>Qty</th></tr>
+{% for p in report.top_products %}<tr><td>{{ p.name }}</td><td>{{ p.quantity }}</td></tr>{% endfor %}
+</table>
+{% endblock %}
