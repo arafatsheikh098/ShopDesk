@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'm*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: shopdesk
+          POSTGRES_PASSWORD: shopdesk
+          POSTGRES_DB: shopdesk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shopdesk -d shopdesk"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk_test
+      APP_ENV: development
+      SECRET_KEY: ci-secret-key-1234567890-abcdef
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client sqlite3
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Migrations up
+        run: alembic upgrade head
+
+      - name: Migrations down
+        run: alembic downgrade base
+
+      - name: Migrations up again
+        run: alembic upgrade head
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Boot app and curl /health
+        run: |
+          (uvicorn app.main:app --host 127.0.0.1 --port 8000 &) && sleep 3
+          curl -sS -o /tmp/health.json -w "HTTP %{http_code}\n" http://127.0.0.1:8000/health
+          cat /tmp/health.json
