@@ -42,6 +42,28 @@
 <main>
   {% block content %}{% endblock %}
 </main>
+<script>
+  // Auto-inject CSRF token from the shopdesk_csrf cookie into every HTML form.
+  (function () {
+    function getCookie(name) {
+      for (const c of document.cookie.split(";")) {
+        const [k, v] = c.trim().split("=");
+        if (k === name) return decodeURIComponent(v || "");
+      }
+      return "";
+    }
+    const csrf = getCookie("shopdesk_csrf");
+    if (!csrf) return;
+    for (const f of document.querySelectorAll("form[method]")) {
+      if (f.querySelector("input[name=_csrf]")) continue;
+      const i = document.createElement("input");
+      i.type = "hidden";
+      i.name = "_csrf";
+      i.value = csrf;
+      f.appendChild(i);
+    }
+  })();
+</script>
 {% block extrascripts %}{% endblock %}
 </body>
 </html>

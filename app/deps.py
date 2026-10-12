@@ -34,18 +34,24 @@ def require_owner(user: User = Depends(require_login)) -> User:
     return user
 
 
-def require_csrf(request: Request) -> None:
-    """CSRF guard. Raises 403 if missing or wrong. GET/HEAD/OPTIONS are exempt."""
+async def require_csrf(request: Request) -> None:
+    """CSRF guard. Raises 403 if missing or wrong. GET/HEAD/OPTIONS are exempt.
+
+    Accepts the token from the X-CSRF-Token header (JSON APIs) or from the
+    `_csrf` form field (HTML forms). Forms must include the hidden input.
+    """
     if request.method in ("GET", "HEAD", "OPTIONS"):
         return
     expected = request.cookies.get(CSRF_COOKIE)
     submitted = request.headers.get("X-CSRF-Token") or request.headers.get("x-csrf-token")
-    # Form-based fallback (for HTML forms posting application/x-www-form-urlencoded)
     if not submitted and request.headers.get("content-type", "").startswith(
         ("application/x-www-form-urlencoded", "multipart/form-data")
     ):
-        # We can't peek the body without consuming it; rely on header in JSON APIs
-        # and on _csrf hidden input rendered by templates (validated in routes).
-        submitted = None
+        # Peek at the form to read _csrf. FastAPI re-parses the body later.
+        try:
+            form = await request.form()
+            submitted = form.get("_csrf")  # type: ignore[union-attr]
+        except Exception:
+            submitted = None
     if not csrf_matches(submitted, expected):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="csrf token missing or wrong")

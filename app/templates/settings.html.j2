@@ -1,0 +1,21 @@
+{% extends "base.html.j2" %}
+{% block title %}Settings — ShopDesk{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+{% if saved %}<p style="color:green">Saved.</p>{% endif %}
+<form method="post" action="/settings" autocomplete="off">
+  <p><label>Shop name<br><input name="shop_name" value="{{ settings.shop_name }}" required></label></p>
+  <p><label>Address<br><textarea name="shop_address" rows="2">{{ settings.shop_address }}</textarea></label></p>
+  <p><label>Phone<br><input name="shop_phone" value="{{ settings.shop_phone }}"></label></p>
+  <p><label>Currency symbol (e.g. ৳, $, €)<br>
+    <input name="currency_symbol" value="{{ settings.currency_symbol }}" maxlength="4">
+  </label></p>
+  <p><label>Timezone (IANA, e.g. Asia/Dhaka)<br>
+    <input name="shop_timezone" value="{{ settings.shop_timezone }}">
+  </label></p>
+  <p><label>Invoice footer<br>
+    <input name="invoice_footer" value="{{ settings.invoice_footer }}" style="width:30em">
+  </label></p>
+  <p><button class="btn" type="submit">Save</button></p>
+</form>
+{% endblock %}

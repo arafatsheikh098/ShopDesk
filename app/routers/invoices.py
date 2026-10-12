@@ -28,7 +28,7 @@ def get_invoice(
         c = session.get(Customer, sale.customer_id)
         if c:
             customer_name = f"{c.name} ({c.phone})"
-    pdf_bytes = render_invoice_pdf(sale, lines, customer_name)
+    pdf_bytes = render_invoice_pdf(sale, lines, customer_name, session=session)
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
