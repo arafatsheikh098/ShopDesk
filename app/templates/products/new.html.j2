@@ -1,0 +1,22 @@
+{% extends "base.html.j2" %}
+{% block title %}New product — ShopDesk{% endblock %}
+{% block content %}
+<h1>New product</h1>
+{% if error %}<p style="color:#b00020">{{ error }}</p>{% endif %}
+<form method="post" action="/products/new" autocomplete="off">
+  <p><label>Name<br><input name="name" required></label></p>
+  <p><label>SKU<br><input name="sku" required></label></p>
+  <p><label>Barcode (optional)<br><input name="barcode"></label></p>
+  <p><label>Unit<br><input name="unit" value="pcs"></label></p>
+  <p><label>Sell price (e.g. 12.34)<br><input name="sell_price" required></label></p>
+  <p><label>Cost price<br><input name="cost_price" required></label></p>
+  <p><label>Low stock threshold<br><input name="low_stock_threshold" value="0"></label></p>
+  <p><label>Category<br>
+    <select name="category_id">
+      <option value="">-- none --</option>
+      {% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+    </select>
+  </label></p>
+  <p><button class="btn" type="submit">Create</button> <a class="btn secondary" href="/products">Cancel</a></p>
+</form>
+{% endblock %}

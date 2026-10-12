@@ -1,0 +1,36 @@
+{% extends "base.html.j2" %}
+{% block title %}Stock — ShopDesk{% endblock %}
+{% block content %}
+<h1>Stock</h1>
+{% if user and user.role.value == 'owner' %}
+<p><a class="btn" href="/stock/low">Low stock</a></p>
+{% endif %}
+<table>
+<tr><th>SKU</th><th>Name</th><th>On hand</th><th>Threshold</th>
+{% if user and user.role.value == 'owner' %}<th>Adjust</th>{% endif %}</tr>
+{% for p in products %}
+<tr>
+  <td>{{ p.sku }}</td>
+  <td>{{ p.name }}</td>
+  <td>{{ p.stock }} {{ p.unit }}</td>
+  <td>{{ p.low_stock_threshold }}</td>
+  {% if user and user.role.value == 'owner' %}
+  <td>
+    <form method="post" action="/stock/receive" style="display:inline">
+      <input type="hidden" name="product_id" value="{{ p.id }}">
+      <input name="quantity" type="number" min="1" value="1" style="width:5em">
+      <input name="note" placeholder="note">
+      <button class="btn" type="submit">+</button>
+    </form>
+    <form method="post" action="/stock/adjust" style="display:inline">
+      <input type="hidden" name="product_id" value="{{ p.id }}">
+      <input name="delta" type="number" placeholder="±" style="width:5em">
+      <input name="reason_text" placeholder="reason" required>
+      <button class="btn secondary" type="submit">adjust</button>
+    </form>
+  </td>
+  {% endif %}
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

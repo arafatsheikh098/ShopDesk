@@ -1,0 +1,16 @@
+{% extends "base.html.j2" %}
+{% block title %}Low stock — ShopDesk{% endblock %}
+{% block content %}
+<h1>Low stock</h1>
+<table>
+<tr><th>SKU</th><th>Name</th><th>On hand</th><th>Threshold</th></tr>
+{% for p in products %}
+<tr>
+  <td>{{ p.sku }}</td>
+  <td>{{ p.name }}</td>
+  <td>{{ p.stock }} {{ p.unit }}</td>
+  <td>{{ p.low_stock_threshold }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}
