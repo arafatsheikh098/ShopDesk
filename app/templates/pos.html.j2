@@ -1,0 +1,59 @@
+{% extends "base.html.j2" %}
+{% block title %}POS — ShopDesk{% endblock %}
+{% block content %}
+<h1>POS</h1>
+<div id="pos-app"
+     data-csrf="{{ csrf_token }}"
+     data-products='{{ products|tojson }}'>
+  <div class="row">
+    <div>
+      <label>Barcode / search
+        <input id="barcode" autocomplete="off" autofocus>
+      </label>
+    </div>
+    <div>
+      <label>Customer (name, phone — for due)
+        <input id="customer-name" placeholder="name">
+        <input id="customer-phone" placeholder="phone">
+      </label>
+    </div>
+  </div>
+
+  <table id="cart">
+    <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Line total</th><th></th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="totals">
+    <div>Subtotal: <span id="subtotal">0</span></div>
+    <div>
+      Discount:
+      <select id="discount-kind">
+        <option value="none">none</option>
+        <option value="percent">percent %</option>
+        <option value="amount">amount</option>
+      </select>
+      <input id="discount-value" type="number" min="0" value="0">
+    </div>
+    <div>Total: <span id="total">0</span></div>
+    <div>
+      Payment:
+      <select id="payment-method">
+        <option value="cash">cash</option>
+        <option value="mobile_wallet">mobile_wallet</option>
+        <option value="due">due</option>
+      </select>
+      Paid: <input id="paid" type="number" min="0" value="0">
+    </div>
+    <button id="finish" class="btn">Finish sale</button>
+    <span id="msg"></span>
+  </div>
+
+  <h2>Recent sales</h2>
+  <input id="sale-search" placeholder="search sale #">
+  <button id="search-sale" class="btn secondary">Find</button>
+  <div id="sale-result"></div>
+</div>
+
+<script type="module" src="/static/js/pos/index.js"></script>
+{% endblock %}
