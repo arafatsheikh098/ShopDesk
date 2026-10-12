@@ -161,3 +161,59 @@ def test_sw_version_is_bumped_with_safe_update_flow():
     assert "skipWaiting" in src
     assert "caches.delete" in src
     assert "SKIP_WAITING" in src  # clients can trigger update
+
+
+# ---- F7.7: client-supplied price that mismatches the server price flags the sale
+
+def test_price_mismatch_flags_sale_for_owner_review(client, session):
+    session.add(
+        User(username="o", password_hash=hash_password("pw"), role=UserRole.OWNER)
+    )
+    session.commit()
+    _login_as(client, session, "o")
+    p = Product(name="X", sku="X1", sell_price=100, cost_price=50, stock=10)
+    session.add(p)
+    session.commit()
+    csrf = client.cookies.get(CSRF_COOKIE)
+    # Client sends a different unit_price (as an offline-synced sale would).
+    r = client.post(
+        "/api/sales",
+        json={
+            "idempotency_key": "mismatch-1",
+            "lines": [{"product_id": p.id, "quantity": 1, "unit_price": 80}],
+            "payment_method": "cash",
+        },
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["price_mismatch_warning"] is True
+    # And the sale's line keeps the client price (customer was charged that).
+    session.expire_all()
+    sale = session.exec(select(Sale).where(Sale.sale_number == body["sale_number"])).first()
+    assert sale is not None
+    assert sale.price_mismatch_warning is True
+
+
+def test_no_price_mismatch_when_unit_price_matches(client, session):
+    session.add(
+        User(username="o", password_hash=hash_password("pw"), role=UserRole.OWNER)
+    )
+    session.commit()
+    _login_as(client, session, "o")
+    p = Product(name="X", sku="X1", sell_price=100, cost_price=50, stock=10)
+    session.add(p)
+    session.commit()
+    csrf = client.cookies.get(CSRF_COOKIE)
+    # Client sends the same price the server has.
+    r = client.post(
+        "/api/sales",
+        json={
+            "idempotency_key": "match-1",
+            "lines": [{"product_id": p.id, "quantity": 1, "unit_price": 100}],
+            "payment_method": "cash",
+        },
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert r.status_code == 200
+    assert r.json()["price_mismatch_warning"] is False

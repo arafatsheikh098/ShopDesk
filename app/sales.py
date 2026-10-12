@@ -115,6 +115,7 @@ def create_sale(
     # Validate and snapshot lines
     sale_lines: list[SaleLine] = []
     subtotal = 0
+    price_mismatch = False
     for entry in lines:
         pid = entry.get("product_id")
         qty = int(entry.get("quantity") or 0)
@@ -126,9 +127,14 @@ def create_sale(
         if not product.is_active:
             raise HTTPException(status_code=400, detail=f"product {product.sku} is inactive")
         # Price snapshot
-        unit_price = int(entry.get("unit_price") if entry.get("unit_price") is not None else product.sell_price)
+        client_price = entry.get("unit_price")
+        unit_price = int(client_price if client_price is not None else product.sell_price)
         if unit_price < 0:
             raise HTTPException(status_code=400, detail="unit_price must be non-negative")
+        # F7.7: flag price mismatch for owner review when the client supplied
+        # a price that doesn't match the product's current sell price.
+        if client_price is not None and int(client_price) != product.sell_price:
+            price_mismatch = True
         line_total = unit_price * qty
         subtotal += line_total
         sale_lines.append(
@@ -199,6 +205,7 @@ def create_sale(
         due=due,
         payment_method=payment_method,
         status=SaleStatus.COMPLETED,
+        price_mismatch_warning=price_mismatch,
     )
     session.add(sale)
     session.flush()

@@ -1,0 +1,48 @@
+# render.yaml — Render Blueprint.
+#
+# Provisions a managed Postgres database and a Web Service for the
+# ShopDesk FastAPI app. Health check is GET /health.
+#
+# Required environment variables (set these in the Render dashboard before
+# the first deploy):
+#   SECRET_KEY — a long random string. The app refuses to boot in
+#                production with the default key, so this MUST be set.
+
+services:
+  - type: pserv
+    name: shopdesk
+    runtime: python
+    plan: starter
+    region: oregon
+    buildCommand: "pip install --upgrade pip && pip install ."
+    startCommand: "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shopdesk-db
+          property: connectionString
+      - key: SECRET_KEY
+        sync: false
+      - key: SHOP_NAME
+        value: My Shop
+      - key: CURRENCY_SYMBOL
+        value: "৳"
+      - key: SHOP_TIMEZONE
+        value: Asia/Dhaka
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    autoDeploy: true
+    disk:
+      name: shopdesk-data
+      mountPath: /var/data
+      sizeGB: 1
+
+databases:
+  - name: shopdesk-db
+    plan: starter
+    region: oregon
+    databaseName: shopdesk
+    user: shopdesk

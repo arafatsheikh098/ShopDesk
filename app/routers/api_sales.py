@@ -87,6 +87,7 @@ def api_create_sale(
             "paid": sale.paid,
             "due": sale.due,
             "status": sale.status.value,
+            "price_mismatch_warning": sale.price_mismatch_warning,
         }
     )
 
