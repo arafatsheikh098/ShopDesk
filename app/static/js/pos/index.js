@@ -149,12 +149,24 @@ if (!root) {
       customer_name: customer_name || undefined,
       customer_phone: customer_phone || undefined,
     };
-    const r = await fetch("/api/sales", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-      body: JSON.stringify(payload),
-      credentials: "same-origin",
-    });
+    let r;
+    try {
+      r = await fetch("/api/sales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+        body: JSON.stringify(payload),
+        credentials: "same-origin",
+      });
+    } catch (e) {
+      // Network error — queue for sync.
+      const { enqueueSale, updatePendingBadge } = await import("/static/js/pos/offline.js");
+      await enqueueSale(payload);
+      await updatePendingBadge();
+      $("msg").textContent = "queued (offline) — sale will sync";
+      cart.clear();
+      render();
+      return;
+    }
     const body = await r.json().catch(() => ({}));
     if (!r.ok) {
       $("msg").textContent = "error: " + (body.detail || r.status);
