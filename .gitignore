@@ -18,7 +18,9 @@ build/
 .idea/
 .vscode/
 playwright-report/
-test-results/
 backups/*.sql
 backups/*.sqlite3
 backups/*.db
+*.db
+*.sqlite
+*.sqlite3
