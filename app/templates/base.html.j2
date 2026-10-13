@@ -4,40 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}ShopDesk{% endblock %}</title>
-<link rel="manifest" href="/static/manifest.webmanifest">
-<meta name="theme-color" content="#0b5fff">
-<style>
-  :root { color-scheme: light dark; }
-  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; }
-  header { background: #0b5fff; color: white; padding: 0.75rem 1rem; }
-  header a { color: white; text-decoration: none; margin-right: 1rem; }
-  main { padding: 1rem; }
-  table { border-collapse: collapse; width: 100%; }
-  th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
-  .btn { display: inline-block; padding: 0.4rem 0.8rem; background: #0b5fff; color: white;
-         border: none; border-radius: 4px; text-decoration: none; cursor: pointer; }
-  .btn.secondary { background: #666; }
-  .btn.danger { background: #b00020; }
-  input, select, textarea { padding: 0.3rem; }
-  .badge { display: inline-block; padding: 0.1rem 0.5rem; background: #b00020; color: white;
-           border-radius: 999px; font-size: 0.8rem; }
-  .pending-badge { display: none; }
-  .pending-badge.show { display: inline-block; }
-</style>
+<link rel="stylesheet" href="/static/css/style.css">
 {% block extrahead %}{% endblock %}
 </head>
 <body>
 <header>
-  <strong>ShopDesk</strong>
-  <a href="/pos">POS</a>
-  <a href="/products">Products</a>
-  <a href="/stock">Stock</a>
-  <a href="/reports/daily">Reports</a>
-  <a href="/settings">Settings</a>
-  <span id="pending-badge" class="badge pending-badge">Pending: 0</span>
-  <span style="float: right;">
-    {% if user %}{{ user.username }} ({{ user.role.value }}) | <a href="/logout" style="color:white">Logout</a>{% endif %}
-  </span>
+  <div>
+    <strong>ShopDesk</strong>
+    <a href="/pos">POS</a>
+    <a href="/products">Products</a>
+    <a href="/stock">Stock</a>
+    <a href="/reports/daily">Reports</a>
+    <a href="/settings">Settings</a>
+    <span id="pending-badge" class="badge pending-badge">Pending: 0</span>
+  </div>
+  <div>
+    {% if user %}
+      <span class="user-badge">👤 {{ user.username }} ({{ user.role.value }})</span>
+      <a href="/logout" class="btn secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Logout</a>
+    {% endif %}
+  </div>
 </header>
 <main>
   {% block content %}{% endblock %}
