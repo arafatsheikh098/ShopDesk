@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from sqlalchemy import create_engine
@@ -15,7 +16,7 @@ from app.models import Category, Customer, Product, User
 def _run_seed(env_db: str) -> None:
     env = {**os.environ, "DATABASE_URL": env_db, "APP_ENV": "development", "SECRET_KEY": "x" * 32}
     r = subprocess.run(
-        ["python", "scripts/seed.py"],
+        [sys.executable, "scripts/seed.py"],
         env=env, capture_output=True, text=True, check=True, cwd=Path(__file__).resolve().parent.parent,
     )
     assert "users=" in r.stdout

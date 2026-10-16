@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from sqlmodel import Session, select
@@ -56,7 +57,7 @@ with Session(eng) as s:
     print('SEED OK', p.id, sale.id)
 """
     r = subprocess.run(
-        ["python", "-c", code],
+        [sys.executable, "-c", code],
         env=env, capture_output=True, text=True, check=True,
     )
     assert "SEED OK" in r.stdout
