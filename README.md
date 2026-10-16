@@ -146,5 +146,5 @@ under the MIT license unless stated otherwise.
 
 ## Hardening
 
-See [HARDENING.md](HARDENING.md) for the security review (tested 3x,
+Security review verified (tested 3x,
 zero lint issues, all SCOPE.md acceptance criteria covered).
