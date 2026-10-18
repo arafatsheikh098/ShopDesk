@@ -1,22 +1,140 @@
 {% extends "base.html.j2" %}
-{% block title %}New product — ShopDesk{% endblock %}
+{% block title %}New Product — ShopDesk{% endblock %}
 {% block content %}
-<h1>New product</h1>
-{% if error %}<p style="color:#b00020">{{ error }}</p>{% endif %}
-<form method="post" action="/products/new" autocomplete="off">
-  <p><label>Name<br><input name="name" required></label></p>
-  <p><label>SKU<br><input name="sku" required></label></p>
-  <p><label>Barcode (optional)<br><input name="barcode"></label></p>
-  <p><label>Unit<br><input name="unit" value="pcs"></label></p>
-  <p><label>Sell price (e.g. 12.34)<br><input name="sell_price" required></label></p>
-  <p><label>Cost price<br><input name="cost_price" required></label></p>
-  <p><label>Low stock threshold<br><input name="low_stock_threshold" value="0"></label></p>
-  <p><label>Category<br>
-    <select name="category_id">
-      <option value="">-- none --</option>
-      {% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
-    </select>
-  </label></p>
-  <p><button class="btn" type="submit">Create</button> <a class="btn secondary" href="/products">Cancel</a></p>
-</form>
+<div class="page-header">
+  <div>
+    <div class="breadcrumbs"><a href="/products">Products</a> <span>/</span> New</div>
+    <h1>Create New Product</h1>
+    <p>Add a new item to your catalog with pricing, category, and reorder threshold</p>
+  </div>
+  <div>
+    <a href="/products" class="btn secondary">Back to Products</a>
+  </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+  <span>{{ error }}</span>
+</div>
+{% endif %}
+
+<div class="grid-2col">
+  <div class="card">
+    <form method="post" action="/products/new" autocomplete="off">
+      <h3 style="margin-top: 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+        Item Information
+      </h3>
+
+      <div class="form-group">
+        <label for="p-name">Product Name *</label>
+        <input id="p-name" name="name" placeholder="e.g. Basmati Rice 1kg" required autofocus>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div class="form-group">
+          <label for="p-sku">SKU (Unique Code) *</label>
+          <input id="p-sku" name="sku" placeholder="e.g. RG-RICE-1" required>
+        </div>
+        <div class="form-group">
+          <label for="p-barcode">Barcode (Optional)</label>
+          <input id="p-barcode" name="barcode" placeholder="e.g. 8901111000012">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div class="form-group">
+          <label for="p-unit">Unit of Measure</label>
+          <input id="p-unit" name="unit" value="pcs" placeholder="pcs, kg, L, pack">
+        </div>
+        <div class="form-group">
+          <label for="p-cat">Category</label>
+          <select id="p-cat" name="category_id">
+            <option value="">-- No Category --</option>
+            {% for c in categories %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 1.25rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+        Pricing & Stock Threshold
+      </h3>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div class="form-group">
+          <label for="p-sell">Selling Price (৳) *</label>
+          <input id="p-sell" name="sell_price" type="number" step="0.01" min="0" placeholder="e.g. 160.00" required>
+        </div>
+        <div class="form-group">
+          <label for="p-cost">Cost Price (৳) *</label>
+          <input id="p-cost" name="cost_price" type="number" step="0.01" min="0" placeholder="e.g. 125.00" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="p-thresh">Low Stock Alert Threshold</label>
+        <input id="p-thresh" name="low_stock_threshold" type="number" min="0" value="0">
+        <span class="text-muted text-sm">Warns when inventory on hand falls at or below this count</span>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+        <button class="btn" type="submit">Create Product</button>
+        <a class="btn secondary" href="/products">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Live Profit Margin Calculator Widget -->
+  <div>
+    <div class="card" style="background: var(--bg-surface-alt);">
+      <div class="card-header">
+        <h3>Margin & Profit Preview</h3>
+        <span class="badge badge-success" id="margin-badge">0% Margin</span>
+      </div>
+      <p class="text-secondary text-sm">Automatic calculation based on entered cost and selling prices:</p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
+          <span>Unit Profit:</span>
+          <strong id="preview-profit" style="font-family: var(--font-mono); font-size: 1.15rem; color: var(--brand-primary);">৳0.00</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
+          <span>Gross Margin:</span>
+          <strong id="preview-margin" style="font-family: var(--font-mono); font-size: 1.15rem; color: var(--success);">0.0%</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
+          <span>Markup:</span>
+          <strong id="preview-markup" style="font-family: var(--font-mono); font-size: 1.15rem; color: var(--text-secondary);">0.0%</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const sellInp = document.getElementById("p-sell");
+  const costInp = document.getElementById("p-cost");
+  const profitElem = document.getElementById("preview-profit");
+  const marginElem = document.getElementById("preview-margin");
+  const markupElem = document.getElementById("preview-markup");
+  const badgeElem = document.getElementById("margin-badge");
+
+  function updateCalc() {
+    const sell = parseFloat(sellInp.value || 0);
+    const cost = parseFloat(costInp.value || 0);
+    const profit = Math.max(0, sell - cost);
+    const margin = sell > 0 ? (profit / sell) * 100 : 0;
+    const markup = cost > 0 ? (profit / cost) * 100 : 0;
+
+    profitElem.textContent = `৳${profit.toFixed(2)}`;
+    marginElem.textContent = `${margin.toFixed(1)}%`;
+    markupElem.textContent = `${markup.toFixed(1)}%`;
+    badgeElem.textContent = `${margin.toFixed(1)}% Margin`;
+  }
+
+  sellInp.addEventListener("input", updateCalc);
+  costInp.addEventListener("input", updateCalc);
+</script>
 {% endblock %}

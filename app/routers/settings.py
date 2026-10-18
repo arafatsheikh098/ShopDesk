@@ -28,6 +28,7 @@ def settings_form(
             "settings": s,
             "csrf_token": csrf_token_for(request),
             "saved": request.query_params.get("saved") == "1",
+            "user": _user,
         },
     )
 

@@ -1,26 +1,67 @@
 {% extends "base.html.j2" %}
 {% block title %}Categories — ShopDesk{% endblock %}
 {% block content %}
-<h1>Categories</h1>
-{% if user and user.role.value == 'owner' %}
-<form method="post" action="/categories" autocomplete="off">
-  <p><label>Name<br><input name="name" required></label>
-     <button class="btn" type="submit">Add</button></p>
-</form>
-{% endif %}
-<table>
-<tr><th>Name</th>{% if user and user.role.value == 'owner' %}<th></th>{% endif %}</tr>
-{% for c in categories %}
-<tr>
-  <td>{{ c.name }}</td>
+<div class="page-header">
+  <div>
+    <h1>Product Categories</h1>
+    <p>Organize your store inventory into intuitive product categories</p>
+  </div>
+</div>
+
+<div class="grid-2col" style="align-items: start;">
   {% if user and user.role.value == 'owner' %}
-  <td>
-    <form method="post" action="/categories/{{ c.id }}/delete" style="display:inline">
-      <button class="btn danger" type="submit" onclick="return confirm('Delete?')">Delete</button>
+  <div class="card">
+    <div class="card-header">
+      <h2>Add New Category</h2>
+    </div>
+    <form method="post" action="/categories" autocomplete="off">
+      <div class="form-group">
+        <label for="cat-name">Category Name</label>
+        <input id="cat-name" name="name" placeholder="e.g. Dairy & Eggs, Bakery, Beverages" required>
+      </div>
+      <button class="btn" type="submit">
+        + Add Category
+      </button>
     </form>
-  </td>
+  </div>
   {% endif %}
-</tr>
-{% endfor %}
-</table>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card-header" style="padding: 1.25rem 1.25rem 0.75rem;">
+      <h2>Existing Categories ({{ categories|length }})</h2>
+    </div>
+    <div class="table-responsive" style="margin: 0; border: none; border-radius: 0;">
+      <table>
+        <thead>
+          <tr>
+            <th>Category Name</th>
+            {% if user and user.role.value == 'owner' %}<th style="text-align: right;">Actions</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in categories %}
+          <tr>
+            <td style="font-weight: 700; color: var(--text-primary);">
+              🏷️ {{ c.name }}
+            </td>
+            {% if user and user.role.value == 'owner' %}
+            <td style="text-align: right;">
+              <form method="post" action="/categories/{{ c.id }}/delete" style="display:inline">
+                <button class="btn danger btn-sm" type="submit" onclick="return confirm('Delete category {{ c.name }}?')">Delete</button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="2" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+              No categories created yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -1,21 +1,162 @@
 {% extends "base.html.j2" %}
-{% block title %}Settings — ShopDesk{% endblock %}
+{% block title %}Store Settings — ShopDesk{% endblock %}
 {% block content %}
-<h1>Settings</h1>
-{% if saved %}<p style="color:green">Saved.</p>{% endif %}
-<form method="post" action="/settings" autocomplete="off">
-  <p><label>Shop name<br><input name="shop_name" value="{{ settings.shop_name }}" required></label></p>
-  <p><label>Address<br><textarea name="shop_address" rows="2">{{ settings.shop_address }}</textarea></label></p>
-  <p><label>Phone<br><input name="shop_phone" value="{{ settings.shop_phone }}"></label></p>
-  <p><label>Currency symbol (e.g. ৳, $, €)<br>
-    <input name="currency_symbol" value="{{ settings.currency_symbol }}" maxlength="4">
-  </label></p>
-  <p><label>Timezone (IANA, e.g. Asia/Dhaka)<br>
-    <input name="shop_timezone" value="{{ settings.shop_timezone }}">
-  </label></p>
-  <p><label>Invoice footer<br>
-    <input name="invoice_footer" value="{{ settings.invoice_footer }}" style="width:30em">
-  </label></p>
-  <p><button class="btn" type="submit">Save</button></p>
-</form>
+<div class="page-header">
+  <div>
+    <h1>Store Settings & Configuration</h1>
+    <p>Manage shop identity, receipt header/footer details, timezone, and currency symbol</p>
+  </div>
+</div>
+
+{% if saved %}
+<div class="alert alert-success">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+  <span>Settings successfully saved and updated across invoices.</span>
+</div>
+{% endif %}
+
+<div class="grid-2col" style="align-items: start;">
+  <!-- Settings Form -->
+  <div class="card">
+    <form method="post" action="/settings" autocomplete="off">
+      <h3 style="margin-top: 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+        🏪 Store Identity
+      </h3>
+
+      <div class="form-group">
+        <label for="inp-shop-name">Shop name</label>
+        <input id="inp-shop-name" name="shop_name" value="{{ settings.shop_name }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="inp-shop-addr">Address</label>
+        <textarea id="inp-shop-addr" name="shop_address" rows="2">{{ settings.shop_address }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="inp-shop-phone">Phone</label>
+        <input id="inp-shop-phone" name="shop_phone" value="{{ settings.shop_phone }}">
+      </div>
+
+      <h3 style="margin-top: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+        🌐 Regional & Currency
+      </h3>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div class="form-group">
+          <label for="inp-curr">Currency symbol (e.g. ৳, $, €)</label>
+          <input id="inp-curr" name="currency_symbol" value="{{ settings.currency_symbol }}" maxlength="4">
+        </div>
+        <div class="form-group">
+          <label for="inp-tz">Timezone (IANA, e.g. Asia/Dhaka)</label>
+          <input id="inp-tz" name="shop_timezone" value="{{ settings.shop_timezone }}">
+        </div>
+      </div>
+
+      <h3 style="margin-top: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
+        🧾 Invoice & Receipts
+      </h3>
+
+      <div class="form-group">
+        <label for="inp-footer">Invoice footer</label>
+        <input id="inp-footer" name="invoice_footer" value="{{ settings.invoice_footer }}" placeholder="Thank you for shopping with us!">
+        <span class="text-muted text-sm">Printed at the bottom of customer invoice receipts</span>
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        <button class="btn" type="submit">Save Settings</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Real-Time Live Receipt Simulation Preview -->
+  <div>
+    <div class="card" style="background: var(--bg-surface-alt); padding: 1.25rem;">
+      <div class="card-header" style="margin-bottom: 1rem;">
+        <h3>Live Receipt Preview</h3>
+        <span class="badge badge-info">PDF Sync</span>
+      </div>
+      <p class="text-secondary text-sm" style="margin-bottom: 1.25rem;">
+        This simulated thermal receipt updates in real-time as you edit the settings on the left:
+      </p>
+
+      <div class="receipt-paper">
+        <div class="receipt-center">
+          <strong id="preview-rec-name" style="font-size: 1.15rem; font-weight: 800; display: block;">
+            {{ settings.shop_name or 'ShopDesk Store' }}
+          </strong>
+          <div id="preview-rec-addr" style="font-size: 0.8rem; color: #4b5563;">
+            {{ settings.shop_address or '123 Market Street' }}
+          </div>
+          <div id="preview-rec-phone" style="font-size: 0.8rem; color: #4b5563;">
+            Tel: {{ settings.shop_phone or '+880 1700-000000' }}
+          </div>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+          <span>Invoice: 20261018-0042</span>
+          <span>18/10/2026 21:30</span>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <div style="font-size: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+            <span>1x Basmati Rice 1kg</span>
+            <span id="preview-rec-i1">{{ settings.currency_symbol or '৳' }}160.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+            <span>2x Mustard Oil 1L</span>
+            <span id="preview-rec-i2">{{ settings.currency_symbol or '৳' }}440.00</span>
+          </div>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.05rem;">
+          <span>TOTAL:</span>
+          <span id="preview-rec-tot">{{ settings.currency_symbol or '৳' }}600.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #4b5563; margin-top: 0.25rem;">
+          <span>Payment (Cash):</span>
+          <span id="preview-rec-paid">{{ settings.currency_symbol or '৳' }}600.00</span>
+        </div>
+
+        <div class="receipt-divider"></div>
+
+        <div class="receipt-center" style="font-size: 0.8rem; font-style: italic; color: #4b5563;" id="preview-rec-footer">
+          {{ settings.invoice_footer or 'Thank you for shopping with us!' }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const nameInp = document.getElementById("inp-shop-name");
+  const addrInp = document.getElementById("inp-shop-addr");
+  const phoneInp = document.getElementById("inp-shop-phone");
+  const currInp = document.getElementById("inp-curr");
+  const footerInp = document.getElementById("inp-footer");
+
+  function syncReceipt() {
+    document.getElementById("preview-rec-name").textContent = nameInp.value || "ShopDesk Store";
+    document.getElementById("preview-rec-addr").textContent = addrInp.value || "";
+    document.getElementById("preview-rec-phone").textContent = phoneInp.value ? `Tel: ${phoneInp.value}` : "";
+    const sym = currInp.value || "৳";
+    document.getElementById("preview-rec-i1").textContent = `${sym}160.00`;
+    document.getElementById("preview-rec-i2").textContent = `${sym}440.00`;
+    document.getElementById("preview-rec-tot").textContent = `${sym}600.00`;
+    document.getElementById("preview-rec-paid").textContent = `${sym}600.00`;
+    document.getElementById("preview-rec-footer").textContent = footerInp.value || "Thank you for shopping with us!";
+  }
+
+  nameInp.addEventListener("input", syncReceipt);
+  addrInp.addEventListener("input", syncReceipt);
+  phoneInp.addEventListener("input", syncReceipt);
+  currInp.addEventListener("input", syncReceipt);
+  footerInp.addEventListener("input", syncReceipt);
+</script>
 {% endblock %}

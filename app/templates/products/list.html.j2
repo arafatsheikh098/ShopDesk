@@ -1,28 +1,117 @@
 {% extends "base.html.j2" %}
-{% block title %}Products — ShopDesk{% endblock %}
+{% block title %}Products Catalog — ShopDesk{% endblock %}
 {% block content %}
-<h1>Products</h1>
-<form method="get" action="/products" style="margin-bottom:1rem">
-  <input name="q" value="{{ q }}" placeholder="Search name, SKU or barcode">
-  <button class="btn">Search</button>
-</form>
-{% if user and user.role.value == 'owner' %}
-<p><a class="btn" href="/products/new">+ New product</a>
-   <a class="btn secondary" href="/products/import">Import CSV</a></p>
-{% endif %}
-<table>
-<tr><th>SKU</th><th>Name</th><th>Barcode</th><th>Stock</th>
-{% if user and user.role.value == 'owner' %}<th>Cost</th>{% endif %}
-<th>Sell</th></tr>
-{% for p in products %}
-<tr>
-  <td>{{ p.sku }}</td>
-  <td>{{ p.name }}</td>
-  <td>{{ p.barcode or '' }}</td>
-  <td>{{ p.stock }} {{ p.unit }}</td>
-  {% if user and user.role.value == 'owner' %}<td>{{ p.cost_price }}</td>{% endif %}
-  <td>{{ p.sell_price }}</td>
-</tr>
-{% endfor %}
-</table>
+<div class="page-header">
+  <div>
+    <h1>Product Catalog</h1>
+    <p>Manage items, prices, barcodes, and inventory thresholds</p>
+  </div>
+  {% if user and user.role.value == 'owner' %}
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <a class="btn" href="/products/new">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      + New product
+    </a>
+    <a class="btn secondary" href="/products/import">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+      Import CSV
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Catalog Summary KPIs -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon primary">📦</div>
+    <div class="stat-content">
+      <div class="stat-label">Total Products</div>
+      <div class="stat-value">{{ products|length }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon success">✓</div>
+    <div class="stat-content">
+      <div class="stat-label">Active Items</div>
+      <div class="stat-value">{{ products|selectattr('is_active', 'defined')|list|length or products|length }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon warning">⚠️</div>
+    <div class="stat-content">
+      <div class="stat-label">Low Stock Alerts</div>
+      <div class="stat-value">{{ products|selectattr('stock', '<=', 10)|list|length }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card" style="margin-bottom: 1.25rem; padding: 1rem;">
+  <form method="get" action="/products" style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin: 0;">
+    <div class="search-bar-wrap" style="flex: 1; min-width: 240px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input name="q" value="{{ q }}" placeholder="Search by product name, SKU or barcode...">
+    </div>
+    <button class="btn" type="submit">Search Catalog</button>
+    {% if q %}
+    <a href="/products" class="btn secondary">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Products Table -->
+<div class="table-responsive">
+  <table>
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Product Name</th>
+        <th>Barcode</th>
+        <th>Stock Level</th>
+        {% if user and user.role.value == 'owner' %}<th>Cost</th>{% endif %}
+        <th>Sell Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td><code style="font-size:0.85rem; font-weight:600; color:var(--text-secondary);">{{ p.sku }}</code></td>
+        <td style="font-weight: 700; color: var(--text-primary);">{{ p.name }}</td>
+        <td>
+          {% if p.barcode %}
+          <span style="font-family: var(--font-mono); font-size: 0.8rem; background: var(--bg-surface-alt); padding: 0.2rem 0.5rem; border-radius: var(--radius-xs);">
+            {{ p.barcode }}
+          </span>
+          {% else %}
+          <span class="text-muted text-sm">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if p.stock <= 0 %}
+          <span class="badge badge-danger">0 {{ p.unit }} (Out)</span>
+          {% elif p.stock <= p.low_stock_threshold %}
+          <span class="badge badge-warning">{{ p.stock }} {{ p.unit }} (Low)</span>
+          {% else %}
+          <span class="badge badge-success">{{ p.stock }} {{ p.unit }}</span>
+          {% endif %}
+        </td>
+        {% if user and user.role.value == 'owner' %}
+        <td style="font-family: var(--font-mono); color: var(--text-secondary);">
+          ৳{{ (p.cost_price / 100)|round(2) if p.cost_price is number else p.cost_price }}
+        </td>
+        {% endif %}
+        <td style="font-family: var(--font-mono); font-weight: 800; color: var(--brand-primary);">
+          ৳{{ (p.sell_price / 100)|round(2) if p.sell_price is number else p.sell_price }}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+          No products found matching your query.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

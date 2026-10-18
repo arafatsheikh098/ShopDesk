@@ -22,7 +22,7 @@ def list_stock(
 ):
     products = session.exec(select(Product).order_by(Product.name)).all()
     return templates.TemplateResponse(
-        request, "stock/list.html.j2", {"products": products}
+        request, "stock/list.html.j2", {"products": products, "user": _user}
     )
 
 
@@ -34,7 +34,7 @@ def low_stock(
 ):
     rows = session.exec(select(Product).where(Product.stock <= Product.low_stock_threshold)).all()
     return templates.TemplateResponse(
-        request, "stock/low.html.j2", {"products": rows}
+        request, "stock/low.html.j2", {"products": rows, "user": _user}
     )
 
 

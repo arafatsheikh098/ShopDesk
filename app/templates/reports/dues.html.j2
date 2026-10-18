@@ -1,9 +1,53 @@
 {% extends "base.html.j2" %}
-{% block title %}Outstanding dues — ShopDesk{% endblock %}
+{% block title %}Outstanding Customer Dues — ShopDesk{% endblock %}
 {% block content %}
-<h1>Outstanding dues</h1>
-<table>
-<tr><th>Customer</th><th>Phone</th><th>Due</th></tr>
-{% for r in rows %}<tr><td>{{ r.name }}</td><td>{{ r.phone }}</td><td>{{ r.due }}</td></tr>{% endfor %}
-</table>
+<div class="page-header">
+  <div>
+    <div class="breadcrumbs"><a href="/reports/daily">Reports</a> <span>/</span> Dues</div>
+    <h1>Outstanding Customer Dues</h1>
+    <p>Balances owed by customers for credit sales</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <a class="btn secondary" href="/reports/daily">Back to Daily Report</a>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table>
+    <thead>
+      <tr>
+        <th>Customer Name</th>
+        <th>Contact Phone</th>
+        <th>Outstanding Due Balance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td style="font-weight: 700; color: var(--text-primary);">{{ r.name }}</td>
+        <td>
+          {% if r.phone %}
+          <a href="tel:{{ r.phone }}" style="color: var(--brand-primary); text-decoration: none; font-family: var(--font-mono);">
+            📞 {{ r.phone }}
+          </a>
+          {% else %}
+          <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge badge-danger" style="font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700;">
+            ৳{{ (r.due / 100)|round(2) if r.due is number else r.due }}
+          </span>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="3" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+          🎉 Great news! Zero outstanding customer dues.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

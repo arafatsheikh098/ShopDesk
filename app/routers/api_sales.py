@@ -9,7 +9,7 @@ from sqlmodel import Session, select
 
 from app.db import get_session
 from app.deps import get_current_user, require_csrf, require_login
-from app.models import Customer, PaymentMethod, Product, Sale, SaleLine, User
+from app.models import Category, Customer, PaymentMethod, Product, Sale, SaleLine, User
 from app.sales import create_sale, customer_outstanding, record_due_payment, void_sale
 from app.templates import templates
 
@@ -27,6 +27,8 @@ def pos_page(
     products = session.exec(
         select(Product).where(Product.is_active == True).order_by(Product.name)  # noqa: E712
     ).all()
+    categories = session.exec(select(Category).order_by(Category.name)).all()
+    cat_map = {c.id: c.name for c in categories if c.id is not None}
     return templates.TemplateResponse(
         request,
         "pos.html.j2",
@@ -40,10 +42,13 @@ def pos_page(
                     "unit": p.unit,
                     "sell_price": p.sell_price,
                     "stock": p.stock,
+                    "category": cat_map.get(p.category_id, "General"),
                 }
                 for p in products
             ],
+            "categories": [{"id": c.id, "name": c.name} for c in categories],
             "csrf_token": request.cookies.get("shopdesk_csrf", ""),
+            "user": user,
         },
     )
 

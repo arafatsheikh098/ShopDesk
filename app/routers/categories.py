@@ -20,7 +20,7 @@ def list_categories(
     _user=Depends(require_login),
 ):
     cats = session.exec(select(Category).order_by(Category.name)).all()
-    return templates.TemplateResponse(request, "categories/list.html.j2", {"categories": cats})
+    return templates.TemplateResponse(request, "categories/list.html.j2", {"categories": cats, "user": _user})
 
 
 @router.post("", dependencies=[Depends(require_csrf), Depends(require_owner)])

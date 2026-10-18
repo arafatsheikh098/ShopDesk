@@ -33,7 +33,7 @@ def daily(
     day = d or _today_local()
     report = daily_report(session, day)
     return templates.TemplateResponse(
-        request, "reports/daily.html.j2", {"day": day, "report": report}
+        request, "reports/daily.html.j2", {"day": day, "report": report, "user": _user}
     )
 
 
@@ -50,7 +50,7 @@ def monthly(
     m = month or today.month
     report = monthly_report(session, y, m)
     return templates.TemplateResponse(
-        request, "reports/monthly.html.j2", {"year": y, "month": m, "report": report}
+        request, "reports/monthly.html.j2", {"year": y, "month": m, "report": report, "user": _user}
     )
 
 
@@ -61,7 +61,7 @@ def dues(
     _user=Depends(require_owner),
 ):
     rows = outstanding_per_customer(session)
-    return templates.TemplateResponse(request, "reports/dues.html.j2", {"rows": rows})
+    return templates.TemplateResponse(request, "reports/dues.html.j2", {"rows": rows, "user": _user})
 
 
 @router.get("/export.csv")

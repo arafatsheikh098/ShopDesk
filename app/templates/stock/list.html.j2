@@ -1,36 +1,101 @@
 {% extends "base.html.j2" %}
-{% block title %}Stock — ShopDesk{% endblock %}
+{% block title %}Stock Inventory — ShopDesk{% endblock %}
 {% block content %}
-<h1>Stock</h1>
-{% if user and user.role.value == 'owner' %}
-<p><a class="btn" href="/stock/low">Low stock</a></p>
-{% endif %}
-<table>
-<tr><th>SKU</th><th>Name</th><th>On hand</th><th>Threshold</th>
-{% if user and user.role.value == 'owner' %}<th>Adjust</th>{% endif %}</tr>
-{% for p in products %}
-<tr>
-  <td>{{ p.sku }}</td>
-  <td>{{ p.name }}</td>
-  <td>{{ p.stock }} {{ p.unit }}</td>
-  <td>{{ p.low_stock_threshold }}</td>
+<div class="page-header">
+  <div>
+    <h1>Inventory & Stock Ledger</h1>
+    <p>Real-time stock balance tracking with non-negative ledger guarantees</p>
+  </div>
   {% if user and user.role.value == 'owner' %}
-  <td>
-    <form method="post" action="/stock/receive" style="display:inline">
-      <input type="hidden" name="product_id" value="{{ p.id }}">
-      <input name="quantity" type="number" min="1" value="1" style="width:5em">
-      <input name="note" placeholder="note">
-      <button class="btn" type="submit">+</button>
-    </form>
-    <form method="post" action="/stock/adjust" style="display:inline">
-      <input type="hidden" name="product_id" value="{{ p.id }}">
-      <input name="delta" type="number" placeholder="±" style="width:5em">
-      <input name="reason_text" placeholder="reason" required>
-      <button class="btn secondary" type="submit">adjust</button>
-    </form>
-  </td>
+  <div style="display: flex; gap: 0.5rem;">
+    <a class="btn secondary" href="/stock/low">
+      ⚠️ View Low Stock Alerts
+    </a>
+  </div>
   {% endif %}
-</tr>
-{% endfor %}
-</table>
+</div>
+
+<!-- Stock Health Stat Cards -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon primary">📊</div>
+    <div class="stat-content">
+      <div class="stat-label">Total Tracked Items</div>
+      <div class="stat-value">{{ products|length }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon success">✓</div>
+    <div class="stat-content">
+      <div class="stat-label">Well Stocked</div>
+      <div class="stat-value">{{ products|rejectattr('stock', '<=', 10)|list|length }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon warning">⚠️</div>
+    <div class="stat-content">
+      <div class="stat-label">At or Below Threshold</div>
+      <div class="stat-value">{{ products|selectattr('stock', '<=', 10)|list|length }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table>
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Product Name</th>
+        <th>On Hand</th>
+        <th>Threshold</th>
+        {% if user and user.role.value == 'owner' %}
+        <th style="min-width: 320px;">Quick Stock Adjustments</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td><code>{{ p.sku }}</code></td>
+        <td style="font-weight: 700;">{{ p.name }}</td>
+        <td>
+          {% if p.stock <= 0 %}
+          <span class="badge badge-danger">0 {{ p.unit }}</span>
+          {% elif p.stock <= p.low_stock_threshold %}
+          <span class="badge badge-warning">{{ p.stock }} {{ p.unit }}</span>
+          {% else %}
+          <span class="badge badge-success">{{ p.stock }} {{ p.unit }}</span>
+          {% endif %}
+        </td>
+        <td style="font-family: var(--font-mono); color: var(--text-muted);">
+          {{ p.low_stock_threshold }} {{ p.unit }}
+        </td>
+        {% if user and user.role.value == 'owner' %}
+        <td>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+            <!-- Receive Stock -->
+            <form method="post" action="/stock/receive" style="display: flex; gap: 0.35rem; align-items: center; margin: 0;">
+              <input type="hidden" name="product_id" value="{{ p.id }}">
+              <input name="quantity" type="number" min="1" value="1" style="width: 4em; padding: 0.35rem 0.5rem; font-size: 0.85rem;" title="Receive quantity">
+              <input name="note" placeholder="note" style="width: 6em; padding: 0.35rem 0.5rem; font-size: 0.85rem;">
+              <button class="btn btn-sm" type="submit" title="Receive shipment">+</button>
+            </form>
+
+            <span style="color: var(--border-color);">|</span>
+
+            <!-- Adjust Stock -->
+            <form method="post" action="/stock/adjust" style="display: flex; gap: 0.35rem; align-items: center; margin: 0;">
+              <input type="hidden" name="product_id" value="{{ p.id }}">
+              <input name="delta" type="number" placeholder="±" style="width: 4em; padding: 0.35rem 0.5rem; font-size: 0.85rem;" title="Delta (+/-)" required>
+              <input name="reason_text" placeholder="reason" style="width: 7em; padding: 0.35rem 0.5rem; font-size: 0.85rem;" required>
+              <button class="btn secondary btn-sm" type="submit" title="Adjust ledger">adjust</button>
+            </form>
+          </div>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

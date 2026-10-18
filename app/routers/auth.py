@@ -49,6 +49,13 @@ def login_submit(
     return response
 
 
+@router.get("/logout")
+def logout_get():
+    response = RedirectResponse(url="/login", status_code=303)
+    clear_session_cookie(response)
+    return response
+
+
 @router.post("/logout", dependencies=[Depends(require_csrf)])
 def logout():
     response = RedirectResponse(url="/login", status_code=303)

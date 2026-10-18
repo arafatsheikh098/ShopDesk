@@ -1,9 +1,50 @@
 {% extends "base.html.j2" %}
-{% block title %}Monthly report — ShopDesk{% endblock %}
+{% block title %}Monthly Report — ShopDesk{% endblock %}
 {% block content %}
-<h1>Monthly report — {{ year }}-{{ '%02d' % month }}</h1>
-<p>Sales: <b>{{ report.sales_count }}</b> |
-   Total: <b>{{ report.total }}</b> |
-   Discount: {{ report.discount }} |
-   <b>Profit: {{ report.profit }}</b></p>
+<div class="page-header">
+  <div>
+    <div class="breadcrumbs"><a href="/reports/daily">Reports</a> <span>/</span> Monthly Summary</div>
+    <h1>Monthly Report — {{ year }}-{{ '%02d' % month }}</h1>
+    <p>Monthly sales performance, profit margins, and revenue trajectory</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <a class="btn secondary" href="/reports/daily">📅 Daily Report</a>
+    <a class="btn secondary" href="/reports/dues">📋 Customer Dues</a>
+    <a class="btn secondary" href="/reports/export.csv">⬇ Export CSV</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon primary">🧾</div>
+    <div class="stat-content">
+      <div class="stat-label">Sales: <b>{{ report.sales_count }}</b></div>
+      <div class="stat-value">{{ report.sales_count }}</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon success">💰</div>
+    <div class="stat-content">
+      <div class="stat-label">Total: <b>{{ report.total }}</b></div>
+      <div class="stat-value">৳{{ (report.total / 100)|round(2) if report.total is number else report.total }}</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon primary">🏷️</div>
+    <div class="stat-content">
+      <div class="stat-label">Discount: {{ report.discount }}</div>
+      <div class="stat-value">৳{{ (report.discount / 100)|round(2) if report.discount is number else report.discount }}</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon success">📈</div>
+    <div class="stat-content">
+      <div class="stat-label"><b>Profit: {{ report.profit }}</b></div>
+      <div class="stat-value">৳{{ (report.profit / 100)|round(2) if report.profit is number else report.profit }}</div>
+    </div>
+  </div>
+</div>
 {% endblock %}

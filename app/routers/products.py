@@ -36,7 +36,17 @@ def list_products(
         ).order_by(Product.name)
     products = session.exec(stmt).all()
     return templates.TemplateResponse(
-        request, "products/list.html.j2", {"products": products, "q": q or ""}
+        request, "products/list.html.j2", {"products": products, "q": q or "", "user": _user}
+    )
+
+
+@router.get("/import")
+def import_csv_page(
+    request: Request,
+    _user=Depends(require_owner),
+):
+    return templates.TemplateResponse(
+        request, "products/import.html.j2", {"user": _user}
     )
 
 
@@ -48,7 +58,7 @@ def new_product_form(
 ):
     cats = session.exec(select(Category).order_by(Category.name)).all()
     return templates.TemplateResponse(
-        request, "products/new.html.j2", {"categories": cats, "error": None}
+        request, "products/new.html.j2", {"categories": cats, "error": None, "user": _user}
     )
 
 

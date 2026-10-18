@@ -1,0 +1,191 @@
+{% extends "base.html.j2" %}
+{% block title %}Import Products — ShopDesk{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumbs"><a href="/products">Products</a> <span>/</span> Import</div>
+    <h1>Import Products from CSV</h1>
+    <p class="text-secondary">Bulk upload items into your catalog with automatic dry-run verification.</p>
+  </div>
+  <div>
+    <a href="/products" class="btn secondary">Back to Products</a>
+  </div>
+</div>
+
+<div class="grid-2col">
+  <div class="card">
+    <div class="card-header">
+      <h2>Upload CSV File</h2>
+      <span class="badge badge-info">UTF-8 Encoded</span>
+    </div>
+
+    <form id="import-form" method="post" action="/products/import" enctype="multipart/form-data">
+      <div class="drop-zone" id="drop-zone">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <p><strong>Click to choose a CSV file</strong> or drag & drop here</p>
+        <span class="text-muted text-sm">Required columns: name, sku, sell_price, cost_price</span>
+        <input type="file" id="csv-file-input" name="file" accept=".csv" required style="display:none">
+        <div id="file-chosen" class="file-chosen-pill" style="display:none"></div>
+      </div>
+
+      <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <button type="button" id="btn-dry-run" class="btn secondary" disabled>
+          🔍 Run Dry-Run Test
+        </button>
+        <button type="button" id="btn-commit" class="btn" disabled>
+          ⚡ Import Valid Products
+        </button>
+      </div>
+    </form>
+
+    <div id="import-status" style="margin-top: 1rem;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>CSV Requirements & Guide</h2>
+      <a href="data:text/csv;charset=utf-8,name,sku,barcode,unit,sell_price,cost_price,low_stock_threshold%0ABasmati%20Rice%201kg,RG-RICE-1,8901111000012,pcs,160.00,125.00,20%0AMustard%20Oil%201L,OS-MOIL-1,8901111000021,pcs,220.00,175.00,10" download="shopdesk_template.csv" class="btn secondary btn-sm">
+        ⬇ Download Template CSV
+      </a>
+    </div>
+
+    <p class="text-secondary text-sm">Your CSV file must include header columns with the exact lowercase names listed below:</p>
+    
+    <table class="table-compact" style="margin-top: 0.75rem;">
+      <thead>
+        <tr><th>Column</th><th>Required</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>name</code></td><td><span class="badge badge-success">Required</span></td><td>Basmati Rice 1kg</td></tr>
+        <tr><td><code>sku</code></td><td><span class="badge badge-success">Required</span></td><td>RG-RICE-1</td></tr>
+        <tr><td><code>sell_price</code></td><td><span class="badge badge-success">Required</span></td><td>160.00</td></tr>
+        <tr><td><code>cost_price</code></td><td><span class="badge badge-success">Required</span></td><td>125.00</td></tr>
+        <tr><td><code>barcode</code></td><td><span class="badge">Optional</span></td><td>8901111000012</td></tr>
+        <tr><td><code>unit</code></td><td><span class="badge">Optional</span></td><td>pcs / kg / L</td></tr>
+        <tr><td><code>low_stock_threshold</code></td><td><span class="badge">Optional</span></td><td>15</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="preview-section" class="card" style="margin-top: 1.5rem; display: none;">
+  <div class="card-header">
+    <h2>Dry-Run Results & Preview</h2>
+    <span id="preview-summary-badge" class="badge"></span>
+  </div>
+  <div id="preview-errors" style="margin-bottom: 1rem;"></div>
+  <div class="table-responsive">
+    <table id="preview-table">
+      <thead>
+        <tr><th>SKU</th><th>Name</th><th>Barcode</th><th>Sell Price</th><th>Cost Price</th><th>Unit</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const dropZone = document.getElementById("drop-zone");
+  const fileInput = document.getElementById("csv-file-input");
+  const fileChosen = document.getElementById("file-chosen");
+  const btnDryRun = document.getElementById("btn-dry-run");
+  const btnCommit = document.getElementById("btn-commit");
+  const statusDiv = document.getElementById("import-status");
+  const previewSection = document.getElementById("preview-section");
+  const previewTbody = document.querySelector("#preview-table tbody");
+  const previewSummaryBadge = document.getElementById("preview-summary-badge");
+  const previewErrors = document.getElementById("preview-errors");
+
+  dropZone.addEventListener("click", () => fileInput.click());
+  dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      handleFileSelected();
+    }
+  });
+
+  fileInput.addEventListener("change", handleFileSelected);
+
+  function handleFileSelected() {
+    if (fileInput.files.length) {
+      const file = fileInput.files[0];
+      fileChosen.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      fileChosen.style.display = "inline-flex";
+      btnDryRun.disabled = false;
+      btnCommit.disabled = false;
+    }
+  }
+
+  function getCsrf() {
+    for (const c of document.cookie.split(";")) {
+      const [k, v] = c.trim().split("=");
+      if (k === "shopdesk_csrf") return decodeURIComponent(v || "");
+    }
+    return "";
+  }
+
+  async function sendImport(confirmVal) {
+    if (!fileInput.files.length) return;
+    statusDiv.innerHTML = '<div class="alert alert-info">Processing CSV...</div>';
+    
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+    formData.append("confirm", confirmVal);
+
+    try {
+      const res = await fetch("/products/import", {
+        method: "POST",
+        headers: { "X-CSRF-Token": getCsrf() },
+        body: formData,
+        credentials: "same-origin"
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        statusDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.detail || res.statusText}</div>`;
+        return;
+      }
+
+      previewSection.style.display = "block";
+      previewTbody.innerHTML = "";
+      previewErrors.innerHTML = "";
+
+      if (data.dry_run) {
+        statusDiv.innerHTML = `<div class="alert alert-info">Dry-run complete: Found ${data.would_import} valid items and ${data.errors.length} errors. Review preview below.</div>`;
+        previewSummaryBadge.className = data.errors.length ? "badge badge-warning" : "badge badge-success";
+        previewSummaryBadge.textContent = `${data.would_import} Valid / ${data.errors.length} Issues`;
+
+        if (data.errors.length) {
+          previewErrors.innerHTML = '<div class="alert alert-warning"><strong>Errors detected:</strong><ul>' + 
+            data.errors.map(e => `<li>Row ${e.row_number}: ${e.errors.join(", ")}</li>`).join("") + '</ul></div>';
+        }
+
+        for (const item of (data.good_preview || [])) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td><code>${item.sku}</code></td><td>${item.name}</td><td>${item.barcode || '—'}</td><td>${(item.sell_price / 100).toFixed(2)}</td><td>${(item.cost_price / 100).toFixed(2)}</td><td>${item.unit}</td>`;
+          previewTbody.appendChild(tr);
+        }
+      } else {
+        statusDiv.innerHTML = `<div class="alert alert-success">✅ Successfully imported ${data.imported} products into your catalog! <a href="/products" class="btn btn-sm" style="margin-left:0.5rem">View Products</a></div>`;
+        previewSummaryBadge.className = "badge badge-success";
+        previewSummaryBadge.textContent = `${data.imported} Imported`;
+      }
+    } catch (err) {
+      statusDiv.innerHTML = `<div class="alert alert-danger">Upload error: ${err.message}</div>`;
+    }
+  }
+
+  btnDryRun.addEventListener("click", () => sendImport(""));
+  btnCommit.addEventListener("click", () => sendImport("yes"));
+});
+</script>
+{% endblock %}
