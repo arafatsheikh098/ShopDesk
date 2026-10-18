@@ -9,7 +9,6 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlmodel import Session, select
 
-from app.db import set_engine
 from app.models import Category, Customer, Product, User
 
 
@@ -27,7 +26,6 @@ def test_seed_is_idempotent(tmp_path: Path):
     env_db = f"sqlite:///{db}"
     _run_seed(env_db)
     eng = create_engine(env_db)
-    set_engine(eng)
     with Session(eng) as s:
         users1 = len(s.exec(select(User)).all())
         products1 = len(s.exec(select(Product)).all())
@@ -51,7 +49,6 @@ def test_seed_creates_known_product(tmp_path: Path):
     env_db = f"sqlite:///{db}"
     _run_seed(env_db)
     eng = create_engine(env_db)
-    set_engine(eng)
     with Session(eng) as s:
         rice = s.exec(select(Product).where(Product.sku == "RG-RICE-1")).first()
         assert rice is not None

@@ -290,47 +290,51 @@ def test_concurrent_sale_numbers_unique_and_gap_free_on_postgres():
     from app.db import set_engine
 
     set_engine(eng)
-    with Session(eng) as s:
-        owner = User(username="o", password_hash=hash_password("pw"), role=UserRole.OWNER)
-        prod = Product(name="R", sku="R1", sell_price=100, cost_price=50, stock=10000)
-        s.add(owner)
-        s.add(prod)
-        s.commit()
-        owner_id = owner.id
-        prod_id = prod.id
-
-    results: list[str] = []
-    lock = threading.Lock()
-
-    def attempt():
+    try:
         with Session(eng) as s:
-            u = s.get(User, owner_id)
-            try:
-                sale = create_sale(
-                    s,
-                    user=u,
-                    lines=[{"product_id": prod_id, "quantity": 1}],
-                    payment_method=PaymentMethod.CASH,
-                )
-                with lock:
-                    results.append(sale.sale_number)
-            except Exception as e:  # pragma: no cover
-                with lock:
-                    results.append("ERROR:" + str(e))
+            owner = User(username="o", password_hash=hash_password("pw"), role=UserRole.OWNER)
+            prod = Product(name="R", sku="R1", sell_price=100, cost_price=50, stock=10000)
+            s.add(owner)
+            s.add(prod)
+            s.commit()
+            owner_id = owner.id
+            prod_id = prod.id
 
-    threads = [threading.Thread(target=attempt) for _ in range(10)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
+        results: list[str] = []
+        lock = threading.Lock()
 
-    numbers = [n for n in results if not n.startswith("ERROR")]
-    assert len(numbers) == 10
-    assert len(set(numbers)) == 10  # all unique
-    import re
+        def attempt():
+            with Session(eng) as s:
+                u = s.get(User, owner_id)
+                try:
+                    sale = create_sale(
+                        s,
+                        user=u,
+                        lines=[{"product_id": prod_id, "quantity": 1}],
+                        payment_method=PaymentMethod.CASH,
+                    )
+                    with lock:
+                        results.append(sale.sale_number)
+                except Exception as e:  # pragma: no cover
+                    with lock:
+                        results.append("ERROR:" + str(e))
 
-    pat = re.compile(r"^\d{8}-\d{4}$")
-    assert all(pat.match(n) for n in numbers)
-    # Sequence 1..10
-    seqs = sorted(int(n.split("-")[1]) for n in numbers)
-    assert seqs == list(range(1, 11))
+        threads = [threading.Thread(target=attempt) for _ in range(10)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        numbers = [n for n in results if not n.startswith("ERROR")]
+        assert len(numbers) == 10
+        assert len(set(numbers)) == 10  # all unique
+        import re
+
+        pat = re.compile(r"^\d{8}-\d{4}$")
+        assert all(pat.match(n) for n in numbers)
+        # Sequence 1..10
+        seqs = sorted(int(n.split("-")[1]) for n in numbers)
+        assert seqs == list(range(1, 11))
+    finally:
+        set_engine(None)
+        eng.dispose()

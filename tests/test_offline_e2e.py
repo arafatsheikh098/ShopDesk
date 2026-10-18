@@ -28,6 +28,15 @@ def _free_port() -> int:
 @pytest.fixture(scope="module")
 def live_server():
     pytest.importorskip("playwright.sync_api")
+    from playwright.sync_api import sync_playwright
+
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch()
+            b.close()
+    except Exception as exc:
+        pytest.skip(f"Chromium binary not available: {exc}")
+
     port = _free_port()
     # Use SQLite for this test (simpler) and set env BEFORE uvicorn imports the app.
     os.environ["DATABASE_URL"] = "sqlite:///./test_offline.db"

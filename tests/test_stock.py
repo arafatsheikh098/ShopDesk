@@ -152,35 +152,39 @@ def test_concurrent_decrement_never_negative_on_postgres():
     SQLModel.metadata.drop_all(eng)
     SQLModel.metadata.create_all(eng)
     app_db.set_engine(eng)
-    with Session(eng) as s:
-        s.add(Product(id=1, name="Race", sku="R1", sell_price=100, cost_price=50, stock=5))
-        s.commit()
-
-    results: list[bool] = []
-    lock = threading.Lock()
-
-    def attempt():
+    try:
         with Session(eng) as s:
-            try:
-                decrement_stock(s, product_id=1, quantity=1, reason=StockReason.SALE, reference=None, user_id=None)
-                s.commit()
-                with lock:
-                    results.append(True)
-            except ValueError:
-                with lock:
-                    results.append(False)
+            s.add(Product(id=1, name="Race", sku="R1", sell_price=100, cost_price=50, stock=5))
+            s.commit()
 
-    threads = [threading.Thread(target=attempt) for _ in range(20)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
+        results: list[bool] = []
+        lock = threading.Lock()
 
-    successes = sum(1 for r in results if r)
-    assert successes == 5, f"expected exactly 5 successes, got {successes}"
-    with Session(eng) as s:
-        p = s.get(Product, 1)
-        assert p.stock == 0
-        mvs = s.exec(select(StockMovement).where(StockMovement.product_id == 1)).all()
-        assert sum(m.delta for m in mvs) == -5
-        assert len(mvs) == 5
+        def attempt():
+            with Session(eng) as s:
+                try:
+                    decrement_stock(s, product_id=1, quantity=1, reason=StockReason.SALE, reference=None, user_id=None)
+                    s.commit()
+                    with lock:
+                        results.append(True)
+                except ValueError:
+                    with lock:
+                        results.append(False)
+
+        threads = [threading.Thread(target=attempt) for _ in range(20)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        successes = sum(1 for r in results if r)
+        assert successes == 5, f"expected exactly 5 successes, got {successes}"
+        with Session(eng) as s:
+            p = s.get(Product, 1)
+            assert p.stock == 0
+            mvs = s.exec(select(StockMovement).where(StockMovement.product_id == 1)).all()
+            assert sum(m.delta for m in mvs) == -5
+            assert len(mvs) == 5
+    finally:
+        app_db.set_engine(None)
+        eng.dispose()
