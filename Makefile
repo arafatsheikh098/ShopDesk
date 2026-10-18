@@ -12,7 +12,7 @@ test:
 	pytest
 
 test-postgres:
-	DATABASE_URL=postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk_test pytest
+	DATABASE_URL=postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk pytest
 
 test-sqlite:
 	DATABASE_URL=sqlite:///./shopdesk.db pytest

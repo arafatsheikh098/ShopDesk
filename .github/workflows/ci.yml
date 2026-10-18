@@ -26,7 +26,7 @@ jobs:
           --health-retries 10
 
     env:
-      DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk_test
+      DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk
       APP_ENV: development
       SECRET_KEY: ci-secret-key-1234567890-abcdef
 
