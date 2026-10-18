@@ -26,7 +26,6 @@ jobs:
           --health-retries 10
 
     env:
-      DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk
       APP_ENV: development
       SECRET_KEY: ci-secret-key-1234567890-abcdef
 
@@ -52,18 +51,31 @@ jobs:
         run: ruff check .
 
       - name: Migrations up
+        env:
+          DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk
         run: alembic upgrade head
 
       - name: Migrations down
+        env:
+          DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk
         run: alembic downgrade base
 
       - name: Migrations up again
+        env:
+          DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk
         run: alembic upgrade head
 
-      - name: Run tests
+      - name: Run tests (SQLite)
         run: pytest -q
 
+      - name: Run tests (Postgres concurrency)
+        env:
+          DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk
+        run: pytest tests/test_sales.py::test_concurrent_sale_numbers_unique_and_gap_free_on_postgres tests/test_stock.py::test_concurrent_decrement_never_negative_on_postgres -q
+
       - name: Boot app and curl /health
+        env:
+          DATABASE_URL: postgresql+psycopg://shopdesk:shopdesk@localhost:5432/shopdesk
         run: |
           (uvicorn app.main:app --host 127.0.0.1 --port 8000 &) && sleep 3
           curl -sS -o /tmp/health.json -w "HTTP %{http_code}\n" http://127.0.0.1:8000/health
